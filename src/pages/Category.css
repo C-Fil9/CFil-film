@@ -1,0 +1,29 @@
+.category-page {
+  padding-top: calc(var(--header-height) + 40px);
+  min-height: 70vh;
+}
+
+.category-header {
+  margin-bottom: 30px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.page-info {
+  font-weight: 600;
+  color: var(--text-primary);
+}
