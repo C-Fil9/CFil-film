@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search as SearchIcon } from 'lucide-react';
-import { searchMovies, getImageUrl, type MovieItem } from '../api/phimapi';
+import { searchMovies, type MovieItem } from '../api/phimapi';
 import MovieCard from '../components/MovieCard';
 import './Search.css';
 
@@ -12,7 +12,6 @@ const Search: React.FC = () => {
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [cdnDomain, setCdnDomain] = useState('');
 
   useEffect(() => {
     if (!keyword) return;
@@ -24,7 +23,6 @@ const Search: React.FC = () => {
         const res = await searchMovies(keyword);
         if (res.status === 'success') {
           setMovies(res.data.items || []);
-          setCdnDomain(res.data.APP_DOMAIN_CDN_IMAGE || '');
         } else {
           setError('Không tìm thấy kết quả.');
           setMovies([]);
@@ -67,11 +65,7 @@ const Search: React.FC = () => {
           {movies.map((movie) => (
             <MovieCard
               key={movie._id}
-              slug={movie.slug}
-              title={movie.name}
-              originalTitle={movie.origin_name}
-              imageUrl={getImageUrl(movie.thumb_url, cdnDomain)}
-              year={movie.year}
+              movie={movie}
             />
           ))}
         </div>
