@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Category from './pages/Category';
 import MovieDetails from './pages/MovieDetails';
 import Watch from './pages/Watch';
+import Search from './pages/Search';
 import './App.css';
 
 // Component để cuộn lên đầu trang khi chuyển route
@@ -29,7 +30,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/danh-sach/:type" element={<Category />} />
-            <Route path="/search" element={<Category />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/phim/:slug" element={<MovieDetails />} />
             <Route path="/xem-phim/:slug/:episode" element={<Watch />} />
           </Routes>
