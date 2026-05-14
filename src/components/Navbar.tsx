@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Menu, X, Film, Sparkles } from 'lucide-react';
+import { Search, Menu, X, Film, Sparkles, Loader2 } from 'lucide-react';
+import { searchMovies, getImageUrl, type MovieItem } from '../api/phimapi';
 import './Navbar.css';
 
 const Navbar: React.FC = () => {
@@ -8,28 +9,78 @@ const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [liveResults, setLiveResults] = useState<MovieItem[]>([]);
+  const [isSearchingLive, setIsSearchingLive] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [cdnDomain, setCdnDomain] = useState('');
+
   const navigate = useNavigate();
   const location = useLocation();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 30);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
-  // Close mobile menu on route change
+  // Live Search Effect (Debounce)
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setLiveResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setShowDropdown(true);
+    setIsSearchingLive(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await searchMovies(searchQuery, 5); // Limit to 5 results
+        if (res.status === 'success') {
+          setLiveResults(res.data.items || []);
+          setCdnDomain(res.data.APP_DOMAIN_CDN_IMAGE || '');
+        } else {
+          setLiveResults([]);
+        }
+      } catch (error) {
+        console.error("Live search failed", error);
+        setLiveResults([]);
+      } finally {
+        setIsSearchingLive(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Close mobile menu and dropdown on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setShowDropdown(false);
+    setSearchQuery('');
   }, [location.pathname]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?keyword=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery('');
+      setShowDropdown(false);
       setSearchFocused(false);
       searchInputRef.current?.blur();
     }
@@ -79,23 +130,75 @@ const Navbar: React.FC = () => {
 
           {/* Right Section */}
           <div className="navbar__actions">
-            <form
-              className={`navbar__search ${searchFocused ? 'navbar__search--focused' : ''}`}
-              onSubmit={handleSearch}
-            >
-              <Search className="navbar__search-icon" size={18} />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Tìm phim, diễn viên..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                className="navbar__search-input"
-                id="search-input"
-              />
-            </form>
+            <div className="navbar__search-wrapper" style={{ position: 'relative' }}>
+              <form
+                ref={searchContainerRef}
+                className={`navbar__search ${searchFocused || showDropdown ? 'navbar__search--focused' : ''}`}
+                onSubmit={handleSearch}
+              >
+                <Search className="navbar__search-icon" size={18} />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Tìm phim, diễn viên..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => {
+                    setSearchFocused(true);
+                    if (searchQuery.trim()) setShowDropdown(true);
+                  }}
+                  onBlur={() => setSearchFocused(false)}
+                  className="navbar__search-input"
+                  id="search-input"
+                />
+                {(searchQuery && !isSearchingLive) && (
+                  <button type="button" className="navbar__search-clear" onClick={() => {
+                    setSearchQuery('');
+                    searchInputRef.current?.focus();
+                  }}>
+                    <X size={16} />
+                  </button>
+                )}
+                {isSearchingLive && (
+                  <Loader2 size={16} className="navbar__search-spinner" />
+                )}
+              </form>
+
+              {/* Live Search Dropdown */}
+              {showDropdown && searchQuery.trim().length > 0 && (
+                <div className="navbar__search-dropdown">
+                  <div className="navbar__search-dropdown-header">
+                    Danh sách phim
+                  </div>
+                  <div className="navbar__search-dropdown-list">
+                    {isSearchingLive && liveResults.length === 0 ? (
+                      <div className="navbar__search-dropdown-empty">Đang tìm kiếm...</div>
+                    ) : liveResults.length > 0 ? (
+                      liveResults.map((movie) => (
+                        <Link
+                          key={movie._id}
+                          to={`/phim/${movie.slug}`}
+                          className="navbar__search-item"
+                          onClick={() => setShowDropdown(false)}
+                        >
+                          <img src={getImageUrl(movie.thumb_url, cdnDomain)} alt={movie.name} />
+                          <div className="navbar__search-item-info">
+                            <h4>{movie.name}</h4>
+                            <p>{movie.origin_name}</p>
+                            <span>{movie.year}</span>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="navbar__search-dropdown-empty">Không tìm thấy kết quả.</div>
+                    )}
+                  </div>
+                  <button className="navbar__search-dropdown-footer" onClick={() => handleSearch()}>
+                    Toàn bộ kết quả
+                  </button>
+                </div>
+              )}
+            </div>
 
             <button
               className="navbar__menu-btn"
