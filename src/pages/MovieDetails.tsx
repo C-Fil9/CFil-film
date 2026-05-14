@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, Calendar, Clock, Eye, Clapperboard } from 'lucide-react';
+import { Play, Calendar, Clock, Eye, Clapperboard, ArrowLeft } from 'lucide-react';
 import { getMovieDetails, getImageUrl, type MovieDetailResponse } from '../api/phimapi';
 import './MovieDetails.css';
 
@@ -32,100 +32,129 @@ const MovieDetails: React.FC = () => {
     fetchMovie();
   }, [slug]);
 
-  if (loading) return <div className="loading-spinner"></div>;
-  if (error || !data) return <div className="error-message">{error || 'Không tìm thấy phim'}</div>;
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return <div className="error-message container" style={{ marginTop: '120px' }}>{error || 'Không tìm thấy phim'}</div>;
+  }
 
   const { movie, episodes } = data;
-  
-  // Lấy tập đầu tiên để gắn link "Xem Ngay"
   const firstEpisode = episodes[0]?.server_data[0];
 
+  const metaItems = [
+    { icon: <Calendar size={15} />, value: movie.year },
+    { icon: <Clock size={15} />, value: movie.time },
+    { icon: <Clapperboard size={15} />, value: `${movie.quality} - ${movie.lang}` },
+    { icon: <Eye size={15} />, value: `${movie.view?.toLocaleString()} lượt xem` },
+  ].filter(item => item.value);
+
+  const infoItems = [
+    { label: 'Trạng thái', value: `${movie.episode_current} / ${movie.episode_total || '?'}`, accent: true },
+    { label: 'Đạo diễn', value: movie.director?.join(', ') || 'Đang cập nhật' },
+    { label: 'Diễn viên', value: movie.actor?.join(', ') || 'Đang cập nhật' },
+    { label: 'Thể loại', value: movie.category?.map(c => c.name).join(', ') || 'Đang cập nhật' },
+    { label: 'Quốc gia', value: movie.country?.map(c => c.name).join(', ') || 'Đang cập nhật' },
+  ];
+
   return (
-    <div className="movie-details-page animate-fade-in">
+    <div className="details" id="movie-details">
       {/* Backdrop */}
-      <div 
-        className="backdrop"
-        style={{ backgroundImage: `url(${getImageUrl(movie.poster_url || movie.thumb_url)})` }}
-      >
-        <div className="backdrop-overlay"></div>
+      <div className="details__backdrop">
+        <img
+          src={getImageUrl(movie.poster_url || movie.thumb_url)}
+          alt=""
+          className="details__backdrop-img"
+        />
+        <div className="details__backdrop-overlay" />
       </div>
 
-      <div className="container">
-        <div className="details-content glass-panel">
-          <div className="details-poster">
-            <img src={getImageUrl(movie.thumb_url)} alt={movie.name} />
-            {firstEpisode ? (
-              <Link to={`/xem-phim/${movie.slug}/${firstEpisode.slug}`} className="btn-primary w-full mt-4">
-                <Play size={20} fill="white" /> Xem Phim
-              </Link>
-            ) : (
-              <button className="btn-primary w-full mt-4" disabled>
-                Đang cập nhật
-              </button>
-            )}
+      <div className="container details__container">
+        {/* Back button */}
+        <button className="details__back" onClick={() => window.history.back()}>
+          <ArrowLeft size={18} /> Quay lại
+        </button>
+
+        {/* Main Content */}
+        <div className="details__main glass-panel">
+          {/* Poster */}
+          <div className="details__poster-wrapper">
+            <div className="details__poster">
+              <img src={getImageUrl(movie.thumb_url)} alt={movie.name} />
+              <div className="details__poster-glow" />
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="details__actions">
+              {firstEpisode ? (
+                <Link to={`/xem-phim/${movie.slug}/${firstEpisode.slug}`} className="btn-primary details__play-btn">
+                  <Play size={20} fill="white" /> Xem Phim
+                </Link>
+              ) : (
+                <button className="btn-primary details__play-btn" disabled>
+                  Đang cập nhật
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="details-info">
-            <h1 className="title">{movie.name}</h1>
-            <h2 className="subtitle">{movie.origin_name} ({movie.year})</h2>
+          {/* Info */}
+          <div className="details__info">
+            <h1 className="details__title">{movie.name}</h1>
+            <h2 className="details__subtitle">{movie.origin_name} ({movie.year})</h2>
 
-            <div className="meta-list">
-              <span className="meta-item"><Calendar size={16}/> {movie.year}</span>
-              <span className="meta-item"><Clock size={16}/> {movie.time}</span>
-              <span className="meta-item"><Clapperboard size={16}/> {movie.quality} - {movie.lang}</span>
-              <span className="meta-item"><Eye size={16}/> {movie.view} lượt xem</span>
-            </div>
-
-            <div className="info-grid">
-              <div className="info-row">
-                <span className="info-label">Trạng thái:</span>
-                <span className="info-value text-accent">{movie.episode_current} / {movie.episode_total}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Đạo diễn:</span>
-                <span className="info-value">{movie.director?.join(', ') || 'Đang cập nhật'}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Diễn viên:</span>
-                <span className="info-value">{movie.actor?.join(', ') || 'Đang cập nhật'}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Thể loại:</span>
-                <span className="info-value">
-                  {movie.category?.map(c => c.name).join(', ') || 'Đang cập nhật'}
+            {/* Meta tags */}
+            <div className="details__meta">
+              {metaItems.map((item, i) => (
+                <span key={i} className="details__meta-tag">
+                  {item.icon} {item.value}
                 </span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Quốc gia:</span>
-                <span className="info-value">
-                  {movie.country?.map(c => c.name).join(', ') || 'Đang cập nhật'}
-                </span>
-              </div>
+              ))}
             </div>
 
-            <div className="synopsis">
-              <h3>Nội dung phim:</h3>
-              <div 
-                className="synopsis-content"
-                dangerouslySetInnerHTML={{ __html: movie.content }}
-              ></div>
+            {/* Info grid */}
+            <div className="details__info-grid">
+              {infoItems.map((item, i) => (
+                <div key={i} className="details__info-row">
+                  <span className="details__info-label">{item.label}</span>
+                  <span className={`details__info-value ${item.accent ? 'details__info-value--accent' : ''}`}>
+                    {item.value}
+                  </span>
+                </div>
+              ))}
             </div>
+
+            {/* Synopsis */}
+            {movie.content && (
+              <div className="details__synopsis">
+                <h3 className="details__synopsis-title">Nội dung phim</h3>
+                <div
+                  className="details__synopsis-text"
+                  dangerouslySetInnerHTML={{ __html: movie.content }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Danh sách tập */}
+        {/* Episodes */}
         {episodes && episodes.length > 0 && (
-          <div className="episodes-section mt-8">
+          <div className="details__episodes">
             <h2 className="section-title">Danh Sách Tập</h2>
             {episodes.map((server, idx) => (
-              <div key={idx} className="server-group glass-panel mb-4 p-4">
-                <h3 className="server-name mb-3">{server.server_name}</h3>
-                <div className="episodes-grid">
+              <div key={idx} className="details__server glass-panel">
+                <h3 className="details__server-name">{server.server_name}</h3>
+                <div className="details__episodes-grid">
                   {server.server_data.map((ep, i) => (
-                    <Link 
-                      key={i} 
+                    <Link
+                      key={i}
                       to={`/xem-phim/${movie.slug}/${ep.slug}`}
-                      className="ep-btn"
+                      className="details__ep-btn"
                     >
                       {ep.name}
                     </Link>

@@ -1,77 +1,160 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, PlayCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Search, Menu, X, Film, Sparkles } from 'lucide-react';
 import './Navbar.css';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setIsScrolled(window.scrollY > 30);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?keyword=${encodeURIComponent(searchQuery)}`);
-      setMobileMenuOpen(false);
       setSearchQuery('');
+      setSearchFocused(false);
+      searchInputRef.current?.blur();
     }
   };
 
+  const navLinks = [
+    { path: '/', label: 'Trang Chủ' },
+    { path: '/danh-sach/phim-le', label: 'Phim Lẻ' },
+    { path: '/danh-sach/phim-bo', label: 'Phim Bộ' },
+    { path: '/danh-sach/hoat-hinh', label: 'Hoạt Hình' },
+    { path: '/danh-sach/tv-shows', label: 'TV Shows' },
+  ];
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <header className={`navbar ${isScrolled ? 'scrolled glass-panel' : ''}`}>
-      <div className="container navbar-container">
-        <Link to="/" className="logo">
-          <PlayCircle className="logo-icon" size={32} />
-          <span className="text-gradient">Motchill<span style={{color: 'white'}}>.Pro</span></span>
-        </Link>
+    <>
+      <header className={`navbar ${isScrolled ? 'navbar--scrolled' : ''}`}>
+        <div className="container navbar__inner">
+          {/* Logo */}
+          <Link to="/" className="navbar__logo">
+            <div className="navbar__logo-icon">
+              <Film size={22} />
+            </div>
+            <span className="navbar__logo-text">
+              <span className="text-gradient">CFil</span>
+              <span className="navbar__logo-dot">.vn</span>
+            </span>
+          </Link>
 
-        <nav className={`nav-links ${mobileMenuOpen ? 'open glass-panel' : ''}`}>
-          <Link to="/" onClick={() => setMobileMenuOpen(false)}>Trang Chủ</Link>
-          <Link to="/danh-sach/phim-le" onClick={() => setMobileMenuOpen(false)}>Phim Lẻ</Link>
-          <Link to="/danh-sach/phim-bo" onClick={() => setMobileMenuOpen(false)}>Phim Bộ</Link>
-          <Link to="/danh-sach/hoat-hinh" onClick={() => setMobileMenuOpen(false)}>Hoạt Hình</Link>
-          <Link to="/danh-sach/tv-shows" onClick={() => setMobileMenuOpen(false)}>TV Shows</Link>
-          
-          <form className="search-form mobile-only" onSubmit={handleSearch}>
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm phim..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button type="submit"><Search size={20} /></button>
-          </form>
-        </nav>
+          {/* Desktop Nav */}
+          <nav className="navbar__nav">
+            {navLinks.map(link => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`navbar__link ${isActive(link.path) ? 'navbar__link--active' : ''}`}
+              >
+                {link.label}
+                <span className="navbar__link-indicator" />
+              </Link>
+            ))}
+          </nav>
 
-        <div className="navbar-right">
-          <form className="search-form desktop-only" onSubmit={handleSearch}>
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm phim..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button type="submit"><Search size={20} /></button>
-          </form>
-          
-          <button 
-            className="mobile-toggle" 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {/* Right Section */}
+          <div className="navbar__actions">
+            <form
+              className={`navbar__search ${searchFocused ? 'navbar__search--focused' : ''}`}
+              onSubmit={handleSearch}
+            >
+              <Search className="navbar__search-icon" size={18} />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Tìm phim, diễn viên..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                className="navbar__search-input"
+                id="search-input"
+              />
+            </form>
+
+            <button
+              className="navbar__menu-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+              id="menu-toggle"
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      <div className={`mobile-overlay ${mobileMenuOpen ? 'mobile-overlay--active' : ''}`} onClick={() => setMobileMenuOpen(false)} />
+      
+      {/* Mobile Menu */}
+      <aside className={`mobile-menu ${mobileMenuOpen ? 'mobile-menu--open' : ''}`}>
+        <div className="mobile-menu__header">
+          <Link to="/" className="navbar__logo" onClick={() => setMobileMenuOpen(false)}>
+            <div className="navbar__logo-icon">
+              <Film size={22} />
+            </div>
+            <span className="navbar__logo-text">
+              <span className="text-gradient">CFil</span>
+              <span className="navbar__logo-dot">.vn</span>
+            </span>
+          </Link>
+          <button className="navbar__menu-btn" onClick={() => setMobileMenuOpen(false)}>
+            <X size={22} />
           </button>
         </div>
-      </div>
-    </header>
+
+        <form className="mobile-menu__search" onSubmit={handleSearch}>
+          <Search size={18} />
+          <input
+            type="text"
+            placeholder="Tìm phim, diễn viên..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </form>
+
+        <nav className="mobile-menu__nav">
+          {navLinks.map((link, index) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`mobile-menu__link ${isActive(link.path) ? 'mobile-menu__link--active' : ''}`}
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ animationDelay: `${index * 0.05}s` }}
+            >
+              <Sparkles size={16} className="mobile-menu__link-icon" />
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </aside>
+    </>
   );
 };
 

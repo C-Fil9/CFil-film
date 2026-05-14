@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, TrendingUp, Clapperboard, Tv, Sparkles } from 'lucide-react';
 import HeroSlider from '../components/HeroSlider';
 import MovieCard from '../components/MovieCard';
 import { getLatestMovies, getMoviesByCategory, type MovieItem } from '../api/phimapi';
 import './Home.css';
 
+interface MovieSection {
+  id: string;
+  title: string;
+  icon: React.ReactNode;
+  link: string;
+  movies: MovieItem[];
+}
+
 const Home: React.FC = () => {
   const [latestMovies, setLatestMovies] = useState<MovieItem[]>([]);
-  const [phimLe, setPhimLe] = useState<MovieItem[]>([]);
-  const [phimBo, setPhimBo] = useState<MovieItem[]>([]);
-  const [hoatHinh, setHoatHinh] = useState<MovieItem[]>([]);
+  const [sections, setSections] = useState<MovieSection[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,9 +31,29 @@ const Home: React.FC = () => {
         ]);
 
         setLatestMovies(latestRes.items || []);
-        setPhimLe(phimLeRes.data?.items?.slice(0, 12) || []);
-        setPhimBo(phimBoRes.data?.items?.slice(0, 12) || []);
-        setHoatHinh(hoatHinhRes.data?.items?.slice(0, 12) || []);
+        setSections([
+          {
+            id: 'phim-le',
+            title: 'Phim Lẻ Mới',
+            icon: <Clapperboard size={20} />,
+            link: '/danh-sach/phim-le',
+            movies: phimLeRes.data?.items?.slice(0, 12) || []
+          },
+          {
+            id: 'phim-bo',
+            title: 'Phim Bộ Hot',
+            icon: <Tv size={20} />,
+            link: '/danh-sach/phim-bo',
+            movies: phimBoRes.data?.items?.slice(0, 12) || []
+          },
+          {
+            id: 'hoat-hinh',
+            title: 'Hoạt Hình',
+            icon: <Sparkles size={20} />,
+            link: '/danh-sach/hoat-hinh',
+            movies: hoatHinhRes.data?.items?.slice(0, 12) || []
+          }
+        ]);
       } catch (error) {
         console.error("Error fetching home data", error);
       } finally {
@@ -39,70 +65,52 @@ const Home: React.FC = () => {
   }, []);
 
   if (loading) {
-    return <div className="loading-spinner"></div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner" />
+      </div>
+    );
   }
 
   return (
-    <div className="home-page animate-fade-in">
+    <div className="home" id="home-page">
       <HeroSlider movies={latestMovies} />
       
-      <div className="container content-section">
-        {/* Phim Mới */}
-        <section className="movie-section">
-          <div className="section-header">
-            <h2 className="section-title">Phim Mới Cập Nhật</h2>
+      <div className="container home__content">
+        {/* Latest Movies Section */}
+        <section className="home__section" id="latest-movies">
+          <div className="home__section-header">
+            <h2 className="section-title">
+              <TrendingUp size={20} className="home__section-icon" />
+              Mới Cập Nhật
+            </h2>
           </div>
           <div className="movie-grid">
-            {latestMovies.slice(5, 17).map(movie => (
-              <MovieCard key={movie._id} movie={movie} />
+            {latestMovies.slice(5, 17).map((movie, index) => (
+              <MovieCard key={movie._id} movie={movie} index={index} />
             ))}
           </div>
         </section>
 
-        {/* Phim Lẻ */}
-        <section className="movie-section">
-          <div className="section-header">
-            <h2 className="section-title">Phim Lẻ Mới</h2>
-            <Link to="/danh-sach/phim-le" className="view-more">
-              Xem tất cả <ChevronRight size={16} />
-            </Link>
-          </div>
-          <div className="movie-grid">
-            {phimLe.map(movie => (
-              <MovieCard key={movie._id} movie={movie} />
-            ))}
-          </div>
-        </section>
-
-        {/* Phim Bộ */}
-        <section className="movie-section">
-          <div className="section-header">
-            <h2 className="section-title">Phim Bộ Mới</h2>
-            <Link to="/danh-sach/phim-bo" className="view-more">
-              Xem tất cả <ChevronRight size={16} />
-            </Link>
-          </div>
-          <div className="movie-grid">
-            {phimBo.map(movie => (
-              <MovieCard key={movie._id} movie={movie} />
-            ))}
-          </div>
-        </section>
-
-        {/* Hoạt Hình */}
-        <section className="movie-section">
-          <div className="section-header">
-            <h2 className="section-title">Hoạt Hình</h2>
-            <Link to="/danh-sach/hoat-hinh" className="view-more">
-              Xem tất cả <ChevronRight size={16} />
-            </Link>
-          </div>
-          <div className="movie-grid">
-            {hoatHinh.map(movie => (
-              <MovieCard key={movie._id} movie={movie} />
-            ))}
-          </div>
-        </section>
+        {/* Category Sections */}
+        {sections.map(section => (
+          <section key={section.id} className="home__section" id={`section-${section.id}`}>
+            <div className="home__section-header">
+              <h2 className="section-title">
+                {section.icon}
+                {section.title}
+              </h2>
+              <Link to={section.link} className="home__view-all">
+                Xem tất cả <ChevronRight size={16} />
+              </Link>
+            </div>
+            <div className="movie-grid">
+              {section.movies.map((movie, index) => (
+                <MovieCard key={movie._id} movie={movie} index={index} />
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );
