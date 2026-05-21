@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Category from './pages/Category';
+import Genre from './pages/Genre';
 import MovieDetails from './pages/MovieDetails';
 import Watch from './pages/Watch';
 import Search from './pages/Search';
@@ -30,6 +31,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/danh-sach/:type" element={<Category />} />
+            <Route path="/the-loai" element={<Genre />} />
+            <Route path="/loc/:filterType/:slug" element={<Genre />} />
             <Route path="/search" element={<Search />} />
             <Route path="/phim/:slug" element={<MovieDetails />} />
             <Route path="/xem-phim/:slug/:episode" element={<Watch />} />

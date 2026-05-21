@@ -111,6 +111,20 @@ export const searchMovies = async (keyword: string, limit: number = 24): Promise
   return res.json();
 };
 
+// 5. Lấy phim theo thể loại (hanh-dong, tinh-cam, hai-huoc, kinh-di, ...)
+export const getMoviesByGenre = async (genreSlug: string, page: number = 1): Promise<CategoryResponse> => {
+  const res = await fetch(`${BASE_URL}/v1/api/the-loai/${genreSlug}?page=${page}`);
+  if (!res.ok) throw new Error('Network response was not ok');
+  return res.json();
+};
+
+// 6. Lấy phim theo quốc gia (han-quoc, trung-quoc, nhat-ban, ...)
+export const getMoviesByCountry = async (countrySlug: string, page: number = 1): Promise<CategoryResponse> => {
+  const res = await fetch(`${BASE_URL}/v1/api/quoc-gia/${countrySlug}?page=${page}`);
+  if (!res.ok) throw new Error('Network response was not ok');
+  return res.json();
+};
+
 // Hàm tiện ích để lấy URL ảnh tuyệt đối nếu cần
 export const getImageUrl = (url: string, cdnDomain?: string) => {
   if (url.startsWith('http')) return url;
