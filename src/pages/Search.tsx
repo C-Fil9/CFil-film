@@ -8,7 +8,7 @@ import './Search.css';
 const Search: React.FC = () => {
   const [searchParams] = useSearchParams();
   const keyword = searchParams.get('keyword') || '';
-  
+
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

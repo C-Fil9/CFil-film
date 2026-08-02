@@ -126,7 +126,8 @@ export const getMoviesByCountry = async (countrySlug: string, page: number = 1):
 };
 
 // Hàm tiện ích để lấy URL ảnh tuyệt đối nếu cần
-export const getImageUrl = (url: string, cdnDomain?: string) => {
+export const getImageUrl = (url: string | null | undefined, cdnDomain?: string) => {
+  if (!url) return 'https://phimimg.com/placeholder.png'; // fallback for null/undefined
   if (url.startsWith('http')) return url;
   if (cdnDomain) return `${cdnDomain}/${url}`;
   return `https://phimimg.com/${url}`; // default CDN
